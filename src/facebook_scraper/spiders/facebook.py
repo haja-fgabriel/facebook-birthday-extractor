@@ -47,16 +47,9 @@ class FacebookSpider(scrapy.Spider):
     def login(self):
         self.driver.get("https://facebook.com")
         self.wait_for_element(path_cookies_moreoptions)
-
-        button_cookies_moreoptions = self.driver.find_element(By.XPATH, path_cookies_moreoptions)
-        button_cookies_moreoptions.click()
-
-        time.sleep(2)
-        button_cookies_accept_onlyessential = self.driver.find_element(By.XPATH, path_cookies_accept_onlyessential)
-        button_cookies_accept_onlyessential.click()
+        self.ignore_cookies()
 
         time.sleep(1)
-
         input_email = self.driver.find_element(By.XPATH, path_input_email)
         input_password = self.driver.find_element(By.XPATH, path_input_password)
 
@@ -65,6 +58,14 @@ class FacebookSpider(scrapy.Spider):
 
         button_login = self.driver.find_element(By.XPATH, path_login)
         self.__click_from_js(button_login)
+
+    def ignore_cookies(self):
+        button_cookies_moreoptions = self.driver.find_element(By.XPATH, path_cookies_moreoptions)
+        button_cookies_moreoptions.click()
+
+        time.sleep(1)
+        button_cookies_accept_onlyessential = self.driver.find_element(By.XPATH, path_cookies_accept_onlyessential)
+        button_cookies_accept_onlyessential.click()
 
     def parse_date(self, date):
         format = "%B %d, %Y" if len(date.split(" ")) >= 3 else "%B %d"
