@@ -47,7 +47,7 @@ class FacebookSpider(scrapy.Spider):
 
     def login(self):
         self.driver.get("https://facebook.com")
-        WebDriverWait(self.driver, 10).until(ec.presence_of_element_located((By.XPATH, path_cookies_moreoptions)))
+        self.wait_for_element(path_cookies_moreoptions)
 
         button_cookies_moreoptions = self.driver.find_element(By.XPATH, path_cookies_moreoptions)
         button_cookies_moreoptions.click()
@@ -67,48 +67,54 @@ class FacebookSpider(scrapy.Spider):
         button_login = self.driver.find_element(By.XPATH, path_login)
         self.__click_from_js(button_login)
 
+    def parse_date(self, date):
+        format = "%B %d, %Y" if len(date.split(" ")) >= 3 else "%B %d"
+        return datetime.strptime(date, format)
+
     def get_todays_birthdays(self):
-        div_todays_birthdays = self.driver.find_element(By.XPATH, path_div_todays_birthdays)
-        for div in div_todays_birthdays.find_elements(By.XPATH, path_birthday_entry):
-            profile = FacebookProfile()
-            profile["link"] = div.find_element(By.TAG_NAME, "a").get_attribute("href")
-            profile["name"] = div.find_element(By.XPATH, path_entry_name).text
-            profile["birthday"] = datetime.now().astimezone()
-            yield profile
+        return self.get_profiles(path_div_todays_birthdays, is_today=True)
 
     def get_recent_birthdays(self):
-        div_recent_birthdays = self.driver.find_element(By.XPATH, path_div_recent_birthdays)
-        for div in div_recent_birthdays.find_elements(By.XPATH, path_birthday_entry):
-            profile = FacebookProfile()
-            profile["link"] = div.find_element(By.TAG_NAME, "a").get_attribute("href")
-            profile["name"] = div.find_element(By.XPATH, path_entry_name).text
-            birthday = div.find_element(By.XPATH, path_birthday_entry_birthday).text
-            birthday_format = "%B %d, %Y" if len(birthday.split(" ")) >= 3 else "%B %d"
-            profile["birthday"] = datetime.strptime(birthday, birthday_format)
-            yield profile
+        return self.get_profiles(path_div_recent_birthdays)
 
     def get_upcoming_birthdays(self):
-        div_recent_birthdays = self.driver.find_element(By.XPATH, path_div_upcoming_birthdays)
+        return self.get_profiles(path_div_upcoming_birthdays)
+
+    def get_profiles(self, container_path, is_today=False):
+        div_recent_birthdays = self.driver.find_element(By.XPATH, container_path)
         for div in div_recent_birthdays.find_elements(By.XPATH, path_birthday_entry):
             profile = FacebookProfile()
             profile["link"] = div.find_element(By.TAG_NAME, "a").get_attribute("href")
             profile["name"] = div.find_element(By.XPATH, path_entry_name).text
-            birthday = div.find_element(By.XPATH, path_birthday_entry_birthday).text
-            birthday_format = "%B %d, %Y" if len(birthday.split(" ")) >= 3 else "%B %d"
-            profile["birthday"] = datetime.strptime(birthday, birthday_format)
+            if is_today:
+                profile["birthday"] = datetime.now().astimezone()
+            else:
+                birthday = div.find_element(By.XPATH, path_birthday_entry_birthday).text
+                profile["birthday"] = self.parse_date(birthday)
             yield profile
 
-    def get_all_birthdays(self):
-        WebDriverWait(self.driver, 10).until(ec.presence_of_element_located((By.XPATH, path_searchbar)))
+    def navigate_to_birthdays(self):
+        self.wait_for_main_page_searchbar()
         searchbar = self.driver.find_element(By.XPATH, path_searchbar)
         self.__click_from_js(searchbar)
         searchbar.send_keys("birthdays")
 
-        WebDriverWait(self.driver, 10).until(ec.presence_of_element_located((By.XPATH, path_birthdays_searchresult)))
+        self.wait_for_element(path_birthdays_searchresult)
         birthdays_searchresult = self.driver.find_element(By.XPATH, path_birthdays_searchresult)
         self.__click_from_js(birthdays_searchresult)
+        self.wait_for_birthdays_page()
 
-        WebDriverWait(self.driver, 10).until(ec.presence_of_element_located((By.XPATH, '//h1[text()="Events"]')))
+    def wait_for_main_page_searchbar(self):
+        self.wait_for_element(path_searchbar)
+
+    def wait_for_birthdays_page(self):
+        self.wait_for_element('//h1[text()="Events"]')
+
+    def wait_for_element(self, xpath, timeout=10):
+        WebDriverWait(self.driver, timeout).until(ec.presence_of_element_located((By.XPATH, xpath)))
+
+    def get_all_birthdays(self):
+        self.navigate_to_birthdays()
         for profile in chain(
             self.get_todays_birthdays(),
             self.get_recent_birthdays(),
@@ -116,16 +122,21 @@ class FacebookSpider(scrapy.Spider):
         ):
             yield profile
 
-    def parse(self, response):
+    def validate_login(self):
         if not FACEBOOK_EMAIL or not FACEBOOK_PASSWORD:
             raise Exception(
                 "Login cannot be done. Please set the FACEBOOK_EMAIL and the FACEBOOK_PASSWORD environment variables."
             )
+
+    def init_driver(self):
         self.driver = webdriver.Chrome(
             os.path.join(os.pardir, "chromedriver"),
             chrome_options=opts,
         )
 
+    def parse(self, response):
+        self.validate_login()
+        self.init_driver()
         self.login()
         for person in self.get_all_birthdays():
             yield person
