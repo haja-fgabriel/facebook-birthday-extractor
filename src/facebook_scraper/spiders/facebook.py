@@ -4,7 +4,6 @@ import os
 from itertools import chain
 import time
 
-import ipdb
 import scrapy
 from selenium import webdriver
 from selenium.webdriver.common.by import By
