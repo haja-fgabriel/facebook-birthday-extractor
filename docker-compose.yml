@@ -252,7 +252,7 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
     user: "0:0"
     volumes:
-      - .:/sources
+      - ./airflow:/sources
 
   airflow-cli:
     <<: *airflow-common
@@ -282,6 +282,13 @@ services:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+
+  selenium-chrome:
+    image: selenium/standalone-chrome:latest
+    privileged: true
+    ports:
+      - 4444:4444
+    shm_size: 2g
 
 volumes:
   postgres-db-volume: null

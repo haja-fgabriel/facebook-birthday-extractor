@@ -32,6 +32,7 @@ path_birthday_entry = './/div[@class="dati1w0a qt6c0cv9 hv4rvrfc jb3vyjys b20td4
 path_entry_name = './/span[@class="d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 d9wwppkn iv3no6db gfeo3gy3 a3bd9o3v lrazzd5p oo9gr5id"]'
 path_birthday_entry_birthday = './/span[@class="d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 tia6h79c mdeji52x sq6gx45u a3bd9o3v b1v8xokw m9osqain"]'
 
+
 opts = webdriver.ChromeOptions()
 # opts.add_argument("headless")
 
@@ -129,10 +130,11 @@ class FacebookSpider(scrapy.Spider):
             )
 
     def init_driver(self):
-        self.driver = webdriver.Chrome(
-            os.path.join(os.pardir, "chromedriver"),
-            chrome_options=opts,
-        )
+        # self.driver = webdriver.Chrome(
+        #     os.path.join(os.pardir, os.path.join(os.pardir, "chromedriver")),
+        #     chrome_options=opts,
+        # )
+        self.driver = webdriver.Remote()
 
     def parse(self, response):
         self.validate_login()

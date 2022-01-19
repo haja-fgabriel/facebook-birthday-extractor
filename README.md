@@ -23,4 +23,4 @@ Airflow is a blanao task scheduler which can create DAGs (directed acyclic graph
 
 ## Google Chrome container
 
-Almost copy-pasted @stephen-fox's guide, 
+Almost copy-pasted @stephen-fox's guide.
