@@ -4,6 +4,7 @@ import os
 from itertools import chain
 import time
 
+import ipdb
 import scrapy
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -29,8 +30,12 @@ path_div_todays_birthdays = path_div_birthday_container.format(text="Today's Bir
 path_div_recent_birthdays = path_div_birthday_container.format(text="Recent Birthdays")
 path_div_upcoming_birthdays = path_div_birthday_container.format(text="Upcoming Birthdays")
 path_birthday_entry = './/div[@class="dati1w0a qt6c0cv9 hv4rvrfc jb3vyjys b20td4e0"]/div[@class]'
-path_entry_name = './/span[@class="d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 d9wwppkn iv3no6db gfeo3gy3 a3bd9o3v lrazzd5p oo9gr5id"]'
-path_birthday_entry_birthday = './/span[@class="d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 tia6h79c mdeji52x sq6gx45u a3bd9o3v b1v8xokw m9osqain"]'
+class_entry_name_linux = "d2edcug0 hpfvmrgz qv66sw1b c1et5uql b0tq1wua a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 d9wwppkn hrzyx87i gfeo3gy3 a3bd9o3v lrazzd5p oo9gr5id"
+class_entry_name_mac = "d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 d9wwppkn iv3no6db gfeo3gy3 a3bd9o3v lrazzd5p oo9gr5id"
+path_entry_name = f'.//span[@class="{class_entry_name_linux}" or @class="{class_entry_name_mac}"]'
+class_birthday_entry_birthday_selenium_container = "d2edcug0 hpfvmrgz qv66sw1b c1et5uql b0tq1wua a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 tia6h79c iv3no6db sq6gx45u a3bd9o3v b1v8xokw m9osqain"
+class_birthday_entry_birthday_mac = "d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j fe6kdd0r mau55g9w c8b282yb keod5gw0 nxhoafnm aigsh9s9 tia6h79c mdeji52x sq6gx45u a3bd9o3v b1v8xokw m9osqain"
+path_birthday_entry_birthday = f'.//span[@class="{class_birthday_entry_birthday_mac}" or @class="{class_birthday_entry_birthday_selenium_container}"]'
 
 
 opts = webdriver.ChromeOptions()
@@ -85,6 +90,7 @@ class FacebookSpider(scrapy.Spider):
         div_recent_birthdays = self.driver.find_element(By.XPATH, container_path)
         for div in div_recent_birthdays.find_elements(By.XPATH, path_birthday_entry):
             profile = FacebookProfile()
+            # ipdb.set_trace()
             profile["link"] = div.find_element(By.TAG_NAME, "a").get_attribute("href")
             profile["name"] = div.find_element(By.XPATH, path_entry_name).text
             if is_today:

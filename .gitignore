@@ -130,3 +130,5 @@ dmypy.json
 
 # Google Chrome WebDriver
 **/chromedriver
+
+**/.DS_Store
