@@ -19,6 +19,7 @@ Optional steps (for running under Docker/Airflow):
 
 Airflow is a blanao task scheduler which can create DAGs (directed acyclic graphs) of tasks.
 
+> Please run `docker-compose up airflow-init` for the first time, for upgrading the DB models and creating an user account that grants access to Airflow's interface.
 - `docker-compose up airflow-webserver airflow-worker airflow-scheduler flower` - fires up the essential services to make Airflow run.
 
 ## Google Chrome container
