@@ -132,3 +132,6 @@ dmypy.json
 **/chromedriver
 
 **/.DS_Store
+
+# my own password and e-mail. Don't steal them.
+secrets
