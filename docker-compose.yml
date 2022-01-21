@@ -44,7 +44,7 @@ x-airflow-common:
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   &airflow-common
-  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.2.3}
+  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.2.3-python3.9}
   # build: .
   environment:
     &airflow-common-env
@@ -56,11 +56,12 @@ x-airflow-common:
     AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
     AIRFLOW__CORE__LOAD_EXAMPLES: 'true'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-selenium==4.1.0 scrapy==2.5.1}
   volumes:
     - ./airflow/dags:/opt/airflow/dags
     - ./airflow/logs:/opt/airflow/logs
     - ./airflow/plugins:/opt/airflow/plugins
+    - ./:/facebook-scraper
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -97,7 +98,10 @@ services:
 
   airflow-webserver:
     <<: *airflow-common
-    command: webserver
+    command:
+      - bash
+      - -c
+      - pip install -e /facebook-scraper && airflow webserver
     ports:
       - 8080:8080
     healthcheck:
@@ -119,13 +123,15 @@ services:
 
   airflow-scheduler:
     <<: *airflow-common
-    command: scheduler
+    command:
+      - bash
+      - -c
+      - pip install -e /facebook-scraper && airflow scheduler
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          'airflow jobs check --job-type SchedulerJob --hostname
-            "$${HOSTNAME}"'
+          'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"'
         ]
       interval: 10s
       timeout: 10s
@@ -138,12 +144,14 @@ services:
 
   airflow-worker:
     <<: *airflow-common
-    command: celery worker
+    command:
+      - bash
+      - -c
+      - pip install -e /facebook-scraper && airflow celery worker
     healthcheck:
       test:
         - "CMD-SHELL"
-        - 'celery --app airflow.executors.celery_executor.app inspect ping -d
-          "celery@$${HOSTNAME}"'
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
       interval: 10s
       timeout: 10s
       retries: 5
@@ -152,11 +160,15 @@ services:
       # Required to handle warm shutdown of the celery workers properly
       # See https://airflow.apache.org/docs/docker-stack/entrypoint.html#signal-propagation
       DUMB_INIT_SETSID: "0"
+      FACEBOOK_EMAIL: $FACEBOOK_EMAIL
+      FACEBOOK_PASSWORD: $FACEBOOK_PASSWORD
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
       airflow-init:
         condition: service_completed_successfully
+      selenium-chrome:
+        condition: service_healthy
 
   airflow-triggerer:
     <<: *airflow-common
@@ -165,8 +177,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          'airflow jobs check --job-type TriggererJob --hostname
-            "$${HOSTNAME}"'
+          'airflow jobs check --job-type TriggererJob --hostname "$${HOSTNAME}"'
         ]
       interval: 10s
       timeout: 10s
@@ -187,6 +198,20 @@ services:
         function ver() {
           printf "%04d%04d%04d%04d" $${1//./ }
         }
+        cwd=$$(pwd)
+        echo $${cwd}
+        if [ -d /facebook-scraper ]; then
+            echo 'The "/facebook-scraper" directory exists.'
+            cd /facebook-scraper
+            pip install -r requirements.txt
+            pip install -e .
+            cd "$${cwd}"
+        else
+            echo 'The "/facebook-scraper" directory does not exist. Please make sure if it is mapped from Docker or if it was created prior to this'
+            echo 'Skipping installation of additional dependencies'
+            # exit 1
+        fi
+        # cd "$${cwd}"
         airflow_version=$$(gosu airflow airflow version)
         airflow_version_comparable=$$(ver $${airflow_version})
         min_airflow_version=2.2.0
@@ -243,6 +268,7 @@ services:
         mkdir -p /sources/logs /sources/dags /sources/plugins
         chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins}
         exec /entrypoint airflow version
+        sleep 1000
     # yamllint enable rule:line-length
     environment:
       <<: *airflow-common-env
@@ -252,6 +278,8 @@ services:
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
     user: "0:0"
     volumes:
+      - ./:/facebook-scraper
+      # - python-packages:/root/.local
       - ./airflow:/sources
 
   airflow-cli:
@@ -284,11 +312,19 @@ services:
         condition: service_completed_successfully
 
   selenium-chrome:
-    image: selenium/standalone-chrome:latest
+    container_name: selenium-chrome
+    image: selenium/standalone-chrome:96.0
     privileged: true
     ports:
       - 4444:4444
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "http://localhost:4444" ]
+      interval: 30s
+      timeout: 60s
+      retries: 10
+      start_period: 30s
     shm_size: 2g
 
 volumes:
   postgres-db-volume: null
+  python-packages: null

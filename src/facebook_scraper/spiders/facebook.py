@@ -4,7 +4,6 @@ import os
 from itertools import chain
 import time
 
-import ipdb
 import scrapy
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -140,7 +139,10 @@ class FacebookSpider(scrapy.Spider):
         #     os.path.join(os.pardir, os.path.join(os.pardir, "chromedriver")),
         #     chrome_options=opts,
         # )
-        self.driver = webdriver.Remote()
+        self.driver = webdriver.Remote(
+            command_executor="http://selenium-chrome:4444",
+            options=opts,
+        )
 
     def parse(self, response):
         self.validate_login()

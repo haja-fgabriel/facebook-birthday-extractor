@@ -1,2 +1,2 @@
-mitmproxy==7.0.4
 selenium==4.1.0
+scrapy==2.5.1
