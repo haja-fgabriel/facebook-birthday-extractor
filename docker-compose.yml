@@ -162,6 +162,7 @@ services:
       DUMB_INIT_SETSID: "0"
       FACEBOOK_EMAIL: $FACEBOOK_EMAIL
       FACEBOOK_PASSWORD: $FACEBOOK_PASSWORD
+      SELENIUM_SERVER_URL: http://selenium-chrome:4444
     restart: always
     depends_on:
       <<: *airflow-common-depends-on

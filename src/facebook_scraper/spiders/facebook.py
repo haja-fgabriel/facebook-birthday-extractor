@@ -12,6 +12,7 @@ from selenium.webdriver.support import expected_conditions as ec
 
 from facebook_scraper.items import FacebookProfile
 
+SELENIUM_SERVER_URL = os.getenv("SELENIUM_SERVER_URL", "http://localhost:4444")
 FACEBOOK_PASSWORD = os.getenv("FACEBOOK_PASSWORD")
 FACEBOOK_EMAIL = os.getenv("FACEBOOK_EMAIL")
 
@@ -140,7 +141,7 @@ class FacebookSpider(scrapy.Spider):
         #     chrome_options=opts,
         # )
         self.driver = webdriver.Remote(
-            command_executor="http://selenium-chrome:4444",
+            command_executor=SELENIUM_SERVER_URL,
             options=opts,
         )
 

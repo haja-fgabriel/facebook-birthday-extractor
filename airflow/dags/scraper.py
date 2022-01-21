@@ -20,6 +20,7 @@ run_scraper = BashOperator(
     env={
         "FACEBOOK_EMAIL": os.getenv("FACEBOOK_EMAIL"),
         "FACEBOOK_PASSWORD": os.getenv("FACEBOOK_PASSWORD"),
+        "SELENIUM_SERVER_URL": os.getenv("SELENIUM_SERVER_URL"),
     },
     dag=dag,
     cwd="/facebook-scraper/src",
