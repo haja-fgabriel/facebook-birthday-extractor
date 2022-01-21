@@ -6,13 +6,16 @@
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 
 import json
+import os
 
 from facebook_scraper.encoders import DateEncoder
+
+PROFILES_OUTPUT_FILE = os.getenv("PROFILES_OUTPUT_FILE", "profiles.json")
 
 
 class FacebookScraperPipeline(object):
     def open_spider(self, spider):
-        self.file = open("profiles.json", "w")
+        self.file = open(PROFILES_OUTPUT_FILE, "w")
 
     def close_spider(self, spider):
         self.file.close()
